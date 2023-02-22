@@ -1,0 +1,570 @@
+@font-face {
+    font-family: "Press Start 2P";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../assets/fonts/press-start-2p.woff2") format("woff2");
+}
+
+$body-backgrounds: (
+    color1: #0a0916,
+    color2: #151333,
+);
+
+$texts-colors: (
+    base: #ffffff,
+    links: #25364c,
+    button-active: #13b225,
+);
+
+// Pimp my pig (!)
+
+$flying-speed: 0.4s; // 0.1 to 1s (recommended : 0.4s)
+$flying-height-distance: 20px; // 10 to 40px (recommended : 20px)
+
+$skins: (
+    nyan: (
+        body1: #f19183,
+        body2: #fcd8d7,
+        stains: #fac4b8,
+        eyes: #0c0b0b,
+        ears: #f19183,
+        snout1: #f79197,
+        snout2: #f66b79,
+        snout-holes: #e73b36,
+    ),
+    devil: (
+        body1: #410a07,
+        body2: #bb1626,
+        stains: #790813,
+        eyes: #f0d459,
+        ears: #2b1d05,
+        snout1: #db2839,
+        snout2: #ae1f2d,
+        snout-holes: #900f0b,
+    ),
+    alien: (
+        body1: #116423,
+        body2: #15a031,
+        stains: #0f8b27,
+        eyes: #ffffff,
+        ears: #3dbc56,
+        snout1: #3dbc56,
+        snout2: #319e47,
+        snout-holes: #196e2a,
+    ),
+    baguette: (
+        body1: #f89f39,
+        body2: #fdb85a,
+        stains: #fedda7,
+        eyes: #0c0b0b,
+        ears: #dc790f,
+        snout1: #ffdea1,
+        snout2: #fedea2,
+        snout-holes: #f98d0e,
+    ),
+    // New skin here
+);
+
+$rainbow-part-width: 5px; // 3 to 10px (recommended : 5px)
+
+$rainbow: (
+    nyan: (
+        #e12523,
+        #dc8d30,
+        #deeb44,
+        #01eb3e,
+        #138fe9,
+        #7127ee,
+    ),
+    devil: (
+        #d71440,
+        #ff6c40,
+        #ffce21,
+        #ffce21,
+        #ff6c40,
+        #d71440,
+    ),
+    alien: (
+        #12a921,
+        #0fce22,
+        #0fef25,
+        #0fef25,
+        #0fce22,
+        #12a921,
+    ),
+    baguette: (
+        #2465de,
+        #2465de,
+        #ffffff,
+        #ffffff,
+        #f1200d,
+        #f1200d,
+    ),
+    // New rainbow colors profile here
+);
+
+// Global
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    font: 0.9em "Press Start 2P";
+    text-transform: uppercase;
+    color: map-get($texts-colors, base);
+    background: map-get($body-backgrounds, color1)
+        radial-gradient(
+            circle at center,
+            map-get($body-backgrounds, color2) 0%,
+            map-get($body-backgrounds, color1) 80%
+        )
+        no-repeat;
+}
+
+a {
+    color: map-get($texts-colors, links);
+    text-decoration: none;
+
+    &:hover {
+        color: map-get($texts-colors, base);
+    }
+}
+
+// Skins list (menu top right)
+
+.settings {
+    position: absolute;
+    z-index: 2;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    li {
+        list-style-type: none;
+    }
+
+    button {
+        max-width: 200px;
+        padding: 5px 0;
+        font: inherit;
+        font-size: clamp(12px, 3vw, 16px);
+        color: map-get($texts-colors, base);
+        text-transform: uppercase;
+        text-overflow: ellipsis;
+        user-select: none;
+        white-space: nowrap;
+        overflow: hidden;
+        border: none;
+        transform-origin: right center;
+        background: none;
+
+        @each $skin-name, $skin-details in $skins {
+            &[data-skin="#{$skin-name}"].active {
+                color: #{map-get($skin-details, snout2)};
+            }
+        }
+
+        &.state-button {
+            margin-top: 20px;
+
+            &.active {
+                color: map-get($texts-colors, button-active);
+                text-decoration: none;
+            }
+        }
+
+        &:hover {
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+    }
+
+    @media screen and (max-height: 500px) and (max-width: 750px) {
+        display: none;
+        flex-direction: row;
+        gap: 10px;
+
+        button {
+            &:hover:not(.active) {
+                transform: translateY(-2px);
+            }
+        }
+    }
+}
+
+// Loader container (SVG + "Loading..." text)
+
+.loader-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+
+    // State container (Enter/Exit animation)
+
+    .loader-state {
+        width: 100%;
+
+        // Text ("Loading...")
+
+        + .loader-text {
+            display: block;
+            user-select: none;
+            opacity: 0;
+            transform: translate(10px, calc(#{$flying-height-distance} * 1.5));
+            animation: loader-text-blink $flying-speed ease-in-out infinite
+                alternate;
+
+            @keyframes loader-text-blink {
+                to {
+                    opacity: 1;
+                }
+            }
+
+            @media screen and (max-height: 350px) {
+                display: none;
+            }
+        }
+
+        &.enter-exit {
+            animation: appear $flying-speed * 20 ease-in-out infinite forwards;
+
+            @keyframes appear {
+                0% {
+                    opacity: 0;
+                    transform: translate(-600px, $flying-height-distance);
+                }
+                5%,
+                93% {
+                    opacity: 0;
+                }
+                10% {
+                    transform: translate(50px, $flying-height-distance);
+                }
+                15% {
+                    transform: translate(-50px, $flying-height-distance);
+                }
+                20%,
+                90% {
+                    opacity: 1;
+                    transform: translate(0, $flying-height-distance);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(600px, $flying-height-distance);
+                }
+            }
+
+            + .loader-text {
+                animation: loader-text-blink2 $flying-speed * 20 ease-in-out
+                    infinite forwards;
+
+                @keyframes loader-text-blink2 {
+                    0%,
+                    5%,
+                    15%,
+                    25%,
+                    35%,
+                    45%,
+                    55%,
+                    65%,
+                    75%,
+                    85%,
+                    93%,
+                    100% {
+                        opacity: 0;
+                    }
+                    10%,
+                    20%,
+                    30%,
+                    40%,
+                    50%,
+                    60%,
+                    70%,
+                    80%,
+                    90% {
+                        opacity: 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Global SVG (Rainbow + pig)
+
+svg {
+    --flying-speed: #{$flying-speed};
+
+    width: 100%;
+    max-width: 400px;
+    -webkit-mask-image: linear-gradient(
+        to left,
+        map-get($body-backgrounds, color1) 65%,
+        transparent 85%
+    );
+    mask-image: linear-gradient(
+        to left,
+        map-get($body-backgrounds, color1) 65%,
+        transparent 85%
+    );
+    animation: moves-like-jagger $flying-speed ease-in-out infinite alternate;
+
+    @keyframes moves-like-jagger {
+        to {
+            transform: translateY($flying-height-distance);
+        }
+    }
+}
+
+// Rainbow
+
+.rainbow {
+    rect {
+        width: $rainbow-part-width;
+        height: 6px;
+        stroke: transparent;
+        fill: url(#rainbow-colors);
+    }
+
+    @for $i from 1 through 6 {
+        rect:nth-child(#{$i}) {
+            $posX: 25 - ($rainbow-part-width / 1px - 0.2) * ($i - 1) + px;
+            $posY: 8.5px - 0.1 * $i;
+            $delay: $flying-speed / 1s / 6 * $i + s;
+
+            transform: translate($posX, $posY);
+            animation: over-the-rainbow-#{$i}
+                $flying-speed
+                ease-in-out
+                $delay
+                infinite
+                alternate;
+
+            @keyframes over-the-rainbow-#{$i} {
+                to {
+                    transform: translate(
+                        $posX,
+                        $posY + ($flying-height-distance / 1px / 30) * $i
+                    );
+                }
+            }
+        }
+    }
+}
+
+// Rainbow colors
+
+@each $color-name, $color-details in $rainbow {
+    @for $i from 1 through 6 {
+        .#{$color-name} .rainbow-color#{$i} {
+            stop-color: nth($color-details, $i);
+        }
+    }
+}
+
+// Pig
+
+@each $skin-name, $skin-details in $skins {
+    svg.#{$skin-name} {
+        --body1: #{map-get($skin-details, body1)};
+        --body2: #{map-get($skin-details, body2)};
+        --stains: #{map-get($skin-details, stains)};
+        --eyes: #{map-get($skin-details, eyes)};
+        --ears: #{map-get($skin-details, ears)};
+        --snout1: #{map-get($skin-details, snout1)};
+        --snout2: #{map-get($skin-details, snout2)};
+        --snout-holes: #{map-get($skin-details, snout-holes)};
+    }
+}
+
+.pig {
+    position: relative;
+    transform: translate(-29px);
+    .body2 {
+        fill: var(--body2);
+    }
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+// Body, tail, foot
+
+.pig .body1,
+.tail rect,
+.foot rect {
+    fill: var(--body1);
+}
+// Stains
+
+.stains {
+    fill: var(--stains);
+}
+
+// Snout
+
+.snout {
+    stroke: transparent;
+    transform: translate(52px);
+    animation: sniff-sniff 2s ease-in-out infinite;
+
+    .snout1 {
+        fill: var(--snout1);
+    }
+    .snout2 {
+        fill: var(--snout2);
+    }
+    .snout-holes {
+        fill: var(--snout-holes);
+    }
+
+    @keyframes sniff-sniff {
+        5%,
+        15%,
+        25% {
+            transform: translate(52px);
+        }
+        10%,
+        20% {
+            transform: translate(52.5px);
+        }
+    }
+}
+
+// Tail
+
+.tail {
+    transform: translate(52.25px);
+    transform-origin: center;
+
+    rect:nth-child(2) {
+        transform: translate(3.25px, 10.5px);
+        animation: fairy-tail $flying-speed ease-in-out infinite alternate;
+
+        @keyframes fairy-tail {
+            to {
+                transform: translate(3.25px, 10px);
+            }
+        }
+    }
+}
+
+// Foot
+
+.foot {
+    transform: translate(52px);
+    animation: hypnotic-feet $flying-speed ease-in-out infinite alternate;
+
+    @keyframes hypnotic-feet {
+        to {
+            transform: translate(52.5px);
+        }
+    }
+}
+
+// Ears
+
+.ears {
+    rect {
+        fill: var(--ears);
+    }
+}
+
+// Eyes
+
+.eyes {
+    transform: translate(52px);
+    rect {
+        fill: var(--eyes);
+        animation: blinky-blinky 2s step-start infinite;
+    }
+
+    @keyframes blinky-blinky {
+        5% {
+            opacity: 1;
+        }
+        10% {
+            opacity: 0;
+        }
+    }
+}
+
+// Heart
+
+.heart {
+    animation: sweet-heart 0.6s ease-out;
+
+    transform: translate(33px, 4px);
+
+    @keyframes sweet-heart {
+        to {
+            transform: translate(33px, 0px);
+        }
+    }
+}
+
+// Background (stars)
+
+.background-container {
+    position: absolute;
+    z-index: -1;
+    width: 100%;
+    max-width: 800px;
+    height: 50%;
+    opacity: 0.8;
+    overflow: hidden;
+
+    -webkit-mask-image: radial-gradient(
+        circle,
+        map-get($body-backgrounds, color2) 0%,
+        transparent 80%
+    );
+    mask-image: radial-gradient(
+        circle,
+        map-get($body-backgrounds, color2) 0%,
+        transparent 80%
+    );
+
+    .stars {
+        background: url("../assets/images/stars_background.svg");
+        width: 1740px;
+        height: 100%;
+        animation: through-the-stars $flying-speed + $flying-speed * 2 infinite
+            linear;
+    }
+
+    @keyframes through-the-stars {
+        to {
+            transform: translateX(-50%);
+        }
+    }
+}
+
+// Footer (challenge name + link to "Le Repaire du Web" Discord server)
+
+footer {
+    text-align: center;
+    margin: auto auto 5vh auto;
+    padding: 0 5vw;
+    font-size: 0.6em;
+
+    @media screen and (max-height: 350px) {
+        display: none;
+    }
+}
